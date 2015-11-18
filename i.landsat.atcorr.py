@@ -143,20 +143,18 @@
 #% required: yes
 #%end
 
-#%option
+#%option G_OPT_R_INPUT
 #% key: elevation
 #% key_desc: elevation map
-#% type: double
 #% label: Elevation map
 #% description: Elevation raster map as an input for i.atcorr (refer to i.atcorr's manual)
 #% guisection: Optional maps
 #% required: no
 #%end
 
-#%option
+#%option G_OPT_R_INPUT
 #% key: visibility_map
 #% key_desc: visibility map
-#% type: double
 #% label: Visibility map
 #% description: Visibility raster map as an input for i.atcorr (refer to i.atcorr's manual)
 #% guisection: Optional maps
@@ -172,6 +170,7 @@
 
 # required librairies -------------------------------------------------------
 import os
+#import fnmatch # only if MTL isn't in $GISBASE, and lauching script inside the folder where MTL reside.
 import sys
 sys.path.insert(1, os.path.join(os.path.dirname(sys.path[0]),
                                 'etc', 'i.landsat.atcorr'))
@@ -259,6 +258,8 @@ def main():
 #        grass.fatal(_(msg))
 
     else:
+#        result = fnmatch.fnmatch(file, '*MTL.txt') # if I'm in the path where is MTL, else I've to copy
+#                                                   # MTL to 'cell_misc' of the current mapset.
         result = grass.find_file(element='cell_misc',
                                  name=metafile,
                                  mapset='.')
@@ -309,17 +310,26 @@ def main():
     else:
         scenes = mapsets.split(',')
 
-    if 'PERMANENT' in scenes:
+    if 'PERMANENT' in scenes:  ### Why I need to remove PERMANENT? - because otherwise is used for computation
         scenes.remove('PERMANENT')
 
     # access only to specific mapsets!
     msg = "\n|* Performing atmospheric correction for scenes:  %s" % scenes
     g.message(msg)
 
+    # sane aod defaults?    ### AOD outside loop, I need to set it only one time.
+    if not aod:
+        if 4 < mon < 10:
+            aod = 0.222  # summer
+        else:
+            aod = 0.111  # winter
+    else:
+        aod = float(options['aod'])
+
     for scene in scenes:
 
-        # ensure access only to *current* mapset
-        run('g.mapsets', mapset='.', operation='set')
+        # ensure access only to *current* mapset  ### PERMANENT required in my opinion, some maps (like DEMs) are usually there.
+        run('g.mapsets', mapset='%s,PERMANENT' % scene, operation='set')
 
         # scene's basename as in GRASS' db
         basename = grass.read_command('g.mapset', flags='p')
@@ -332,15 +342,6 @@ def main():
             inputband = prefix + str(band)
             msg = "\n>>> Processing band:  %s" % inputband
             g.message(msg)
-
-            # sane aod defaults?
-            if not aod:
-                if 4 < mon < 10:
-                    aod = 0.222  # summer
-                else:
-                    aod = 0.111  # winter
-            else:
-                aod = float(options['aod'])
 
             # Generate 6S parameterization file
             p6s = Parameters(geo=geo[sensor],
@@ -420,8 +421,8 @@ def main():
                     input=inputband,
                     range=(inp_rng['min'], inp_rng['max']),
                     parameters=tmp_p6s,
-                    visibility=vis_map,
-                    elevation=elevation,
+                    #visibility=vis_map,    # NOT needed in that case
+                    #elevation=elevation,   # NOT needed in that case
                     output=tmp_atm_cor,
                     rescale=(0, 1))
 
