@@ -170,7 +170,6 @@
 
 # required librairies -------------------------------------------------------
 import os
-#import fnmatch # only if MTL isn't in $GISBASE, and lauching script inside the folder where MTL reside.
 import sys
 sys.path.insert(1, os.path.join(os.path.dirname(sys.path[0]),
                                 'etc', 'i.landsat.atcorr'))
@@ -258,8 +257,6 @@ def main():
 #        grass.fatal(_(msg))
 
     else:
-#        result = fnmatch.fnmatch(file, '*MTL.txt') # if I'm in the path where is MTL, else I've to copy
-#                                                   # MTL to 'cell_misc' of the current mapset.
         result = grass.find_file(element='cell_misc',
                                  name=metafile,
                                  mapset='.')
