@@ -307,14 +307,14 @@ def main():
     else:
         scenes = mapsets.split(',')
 
-    if 'PERMANENT' in scenes:  ### Why I need to remove PERMANENT? - because otherwise is used for computation
+    if 'PERMANENT' in scenes:
         scenes.remove('PERMANENT')
 
     # access only to specific mapsets!
     msg = "\n|* Performing atmospheric correction for scenes:  %s" % scenes
     g.message(msg)
 
-    # sane aod defaults?    ### AOD outside loop, I need to set it only one time.
+    # sane aod defaults?
     if not aod:
         if 4 < mon < 10:
             aod = 0.222  # summer
@@ -325,8 +325,8 @@ def main():
 
     for scene in scenes:
 
-        # ensure access only to *current* mapset  ### PERMANENT required in my opinion, some maps (like DEMs) are usually there.
-        run('g.mapsets', mapset='%s,PERMANENT' % scene, operation='set')
+        # ensure access only to *current* mapset
+        run('g.mapsets', mapset='%s' % scene, operation='set')
 
         # scene's basename as in GRASS' db
         basename = grass.read_command('g.mapset', flags='p')
@@ -418,8 +418,6 @@ def main():
                     input=inputband,
                     range=(inp_rng['min'], inp_rng['max']),
                     parameters=tmp_p6s,
-                    #visibility=vis_map,    # NOT needed in that case
-                    #elevation=elevation,   # NOT needed in that case
                     output=tmp_atm_cor,
                     rescale=(0, 1))
 
